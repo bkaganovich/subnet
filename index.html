@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080d14">
+<title>Subnet Calculator — CIDR, Mask, Range & Hex | subnet.</title>
+<meta name="description" content="Instant subnet calculator. Enter an IP/CIDR, subnet mask, hex address, or IP range and get network, broadcast, usable hosts, wildcard, binary breakdown, and CIDR decomposition — no page reloads, works offline.">
+<meta name="keywords" content="subnet calculator, CIDR calculator, subnet mask calculator, IP range to CIDR, network calculator, subnetting tool, wildcard mask, hex IP, binary subnet, route summarization, subnet splitter">
+<meta name="author" content="bkaganovich">
+<link rel="canonical" href="https://bkaganovich.github.io/subnet/">
+<!-- Open Graph (WhatsApp, Slack, LinkedIn previews) -->
+<meta property="og:title" content="subnet. — instant subnet math">
+<meta property="og:description" content="The fastest subnet calculator on the web. Supports CIDR, subnet masks, hex addresses, IP ranges, route summarization, subnet splitting, and binary prefix visualization.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://bkaganovich.github.io/subnet/">
+<!-- Twitter card -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="subnet. — instant subnet math">
+<meta name="twitter:description" content="CIDR · masks · hex · ranges · summarize · split. No page reloads. Works offline.">
+<!-- Structured data for Google rich results -->
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"subnet.","description":"Instant subnet calculator supporting CIDR notation, subnet masks, hex IP addresses, IP ranges, route summarization and subnet splitting.","url":"https://bkaganovich.github.io/subnet/","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["CIDR subnet calculation","Subnet mask conversion","Hex IP address input","IP range to CIDR conversion","Route summarization","Subnet splitting","Binary prefix visualization","Offline support"]}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--mono:'IBM Plex Mono',ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;--radius:14px;}
+html[data-theme="dark"]{
+  --bg:#080d14;--surface:#0e1520;--surface-2:#0a111b;
+  --border:#1c2a3a;--border-strong:#253649;
+  --ink:#e2eaf4;--ink-2:#94a3b8;--muted:#4e6070;
+  --accent:#00d4ff;--accent-ink:#00d4ff;--accent-soft:#001f2e;
+  --accent-badge-bg:#001c28;--accent-badge-border:#00d4ff;
+  --good:#00c984;--danger:#ff5f5f;--warn:#f59e0b;
+  --shadow:0 1px 3px rgba(0,0,0,.5),0 6px 22px rgba(0,0,0,.45);
+}
+html[data-theme="light"]{
+  --bg:#f0f4f8;--surface:#ffffff;--surface-2:#f5f8fb;
+  --border:#dce4ee;--border-strong:#c5d1de;
+  --ink:#0d1b2a;--ink-2:#3d5570;--muted:#7a93aa;
+  --accent:#0094b8;--accent-ink:#007a99;--accent-soft:#e0f5fb;
+  --accent-badge-bg:#e0f5fb;--accent-badge-border:#0094b8;
+  --good:#00875a;--danger:#dc2626;--warn:#b45309;
+  --shadow:0 1px 2px rgba(13,27,42,.05),0 4px 16px rgba(13,27,42,.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--mono);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;line-height:1.45;
+  padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);transition:background .25s,color .25s;}
+.wrap{max-width:540px;margin:0 auto;padding:22px 18px 56px}
+@media(max-width:380px){.wrap{padding:16px 12px 44px}}
+
+/* ── header ── */
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.brand{display:flex;align-items:baseline;gap:9px}
+.brand h1{font-size:19px;font-weight:700;letter-spacing:-.4px}
+.brand .dot{color:var(--accent)}
+.brand small{font-size:10.5px;color:var(--muted);letter-spacing:.4px;font-weight:500}
+.theme{border:1px solid var(--border);background:var(--surface);color:var(--ink-2);
+  width:38px;height:38px;border-radius:11px;cursor:pointer;font-family:var(--mono);
+  font-size:15px;display:grid;place-items:center;transition:.18s;flex:none;}
+.theme:hover{border-color:var(--accent);color:var(--accent)}
+.theme:active{transform:scale(.93)}
+
+/* ── input ── */
+.field{position:relative;margin-bottom:10px}
+.field input{width:100%;font-family:var(--mono);font-size:20px;font-weight:600;letter-spacing:-.3px;
+  color:var(--ink);background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:17px 46px 17px 18px;box-shadow:var(--shadow);
+  transition:border-color .15s,box-shadow .15s;}
+.field input::placeholder{color:var(--muted);font-weight:500;font-size:15px}
+.field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.clear{position:absolute;right:9px;top:50%;transform:translateY(-50%);
+  width:30px;height:30px;border:none;background:transparent;color:var(--muted);
+  cursor:pointer;border-radius:8px;font-size:17px;display:none;place-items:center;}
+.clear:hover{background:var(--surface-2);color:var(--ink)}
+.clear.show{display:grid}
+.mode{font-size:10.5px;color:var(--muted);letter-spacing:.4px;margin:0 2px 14px;
+  min-height:14px;display:flex;align-items:center;gap:6px;word-break:break-all;}
+.mode b{color:var(--accent-ink);font-weight:600}
+
+/* ── scrubber ── */
+.scrub{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 16px 16px;box-shadow:var(--shadow);margin-bottom:20px;}
+.scrub-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}
+.scrub-label{font-size:10.5px;letter-spacing:.7px;color:var(--muted);font-weight:600}
+.prefix-badge{font-size:16px;font-weight:700;color:var(--accent);
+  background:var(--accent-badge-bg);border:1.5px solid var(--accent-badge-border);
+  padding:1px 11px 2px;border-radius:8px;letter-spacing:-.5px;
+  min-width:54px;text-align:center;font-family:var(--mono);}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:5px;
+  background:linear-gradient(to right,var(--accent) var(--fill,75%),var(--border-strong) var(--fill,75%));cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+  background:var(--surface);border:2.5px solid var(--accent);
+  box-shadow:0 0 8px rgba(0,212,255,.25);cursor:grab;transition:transform .1s,box-shadow .1s;}
+input[type=range]::-webkit-slider-thumb:active{transform:scale(1.2);cursor:grabbing;box-shadow:0 0 16px rgba(0,212,255,.5)}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--surface);border:2.5px solid var(--accent);cursor:grab;}
+input[type=range]:focus{outline:none}
+input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px var(--accent-soft)}
+.ticks{display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:7px}
+
+/* ── hero ── */
+.hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:18px 18px 16px;margin-bottom:13px;position:relative;overflow:hidden;}
+.hero::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+.hero .lab{font-size:10px;letter-spacing:.9px;color:var(--muted);font-weight:600;margin-bottom:9px;text-transform:uppercase}
+.range-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.range-row .ip{font-size:25px;font-weight:700;letter-spacing:-.8px;line-height:1.15;color:var(--ink)}
+@media(max-width:380px){.range-row .ip{font-size:20px}}
+.range-row .arr{color:var(--accent);font-weight:700;font-size:18px}
+.hero .count{margin-top:9px;font-size:12.5px;color:var(--ink-2)}
+.hero .count b{color:var(--ink);font-weight:600}
+
+/* ── range mode ── */
+.range-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.rbadge{font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:6px;letter-spacing:.3px}
+.rbadge.exact{color:var(--good);border:1px solid var(--good);background:transparent}
+.rbadge.partial{color:var(--warn);border:1px solid var(--warn);background:transparent}
+.range-hero-sub{font-size:12px;color:var(--ink-2);margin-top:8px}
+.range-hero-sub b{color:var(--ink)}
+.decomp-label{font-size:9.5px;letter-spacing:.8px;color:var(--muted);font-weight:600;margin:14px 2px 8px}
+.decomp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.decomp-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:10px 12px;cursor:pointer;transition:.12s;box-shadow:var(--shadow);-webkit-tap-highlight-color:transparent;}
+.decomp-card:hover{border-color:var(--accent)}
+.decomp-card:active{transform:scale(.982)}
+.decomp-card-k{font-size:9px;letter-spacing:.5px;color:var(--muted);font-weight:600;margin-bottom:4px;
+  display:flex;justify-content:space-between;align-items:center;}
+.decomp-card-cidr{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.3px}
+.decomp-card-range{font-size:10px;color:var(--ink-2);margin-top:3px}
+.decomp-more{margin-top:9px;font-size:11px;color:var(--muted);cursor:pointer;text-align:center;
+  padding:8px;border:1px dashed var(--border);border-radius:8px;}
+.decomp-more:hover{border-color:var(--accent);color:var(--accent-ink)}
+
+/* ── format toggles ── */
+.formats{display:flex;align-items:center;gap:7px;margin:0 2px 11px;flex-wrap:wrap}
+.fmt-label{font-size:9.5px;letter-spacing:.7px;color:var(--muted);font-weight:600;margin-right:1px}
+.fmt-chip{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.5px;
+  color:var(--ink-2);background:var(--surface);border:1px solid var(--border);
+  padding:5px 12px;border-radius:20px;cursor:pointer;transition:.14s;-webkit-tap-highlight-color:transparent;}
+.fmt-chip:hover{border-color:var(--border-strong);color:var(--ink)}
+.fmt-chip.on{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+.fmt-chip:active{transform:scale(.95)}
+.hex-opts{display:none;align-items:center;gap:5px;margin-left:1px}
+.hex-opts.show{display:flex}
+.fmt-chip.sm{font-size:9.5px;padding:4px 9px;letter-spacing:.3px}
+
+/* ── data grid ── */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.cell{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:12px 13px;cursor:pointer;position:relative;transition:.12s;box-shadow:var(--shadow);
+  -webkit-tap-highlight-color:transparent;}
+.cell:hover{border-color:var(--accent)}
+.cell:active{transform:scale(.982)}
+.cell-k{font-size:9.5px;letter-spacing:.6px;color:var(--muted);font-weight:600;margin-bottom:5px;
+  display:flex;justify-content:space-between;align-items:center;}
+.cell-v{font-size:15.5px;font-weight:600;letter-spacing:-.3px;color:var(--ink);word-break:break-all;line-height:1.25}
+.cell-v.dim{color:var(--muted);font-weight:500}
+.copyhint{opacity:0;font-size:9px;color:var(--accent-ink);font-weight:600;letter-spacing:.4px;transition:.15s}
+.cell.copied .copyhint,.decomp-card.copied .copyhint{opacity:1}
+.cell-sub{display:none;font-size:11px;color:var(--accent-ink);opacity:.85;
+  margin-top:5px;padding-top:5px;border-top:1px solid var(--border);
+  letter-spacing:0;word-break:break-all;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .12s;}
+.cell-sub:hover{opacity:1}
+.cell-sub.sub-copied::after{content:' ✓';font-size:9px;opacity:.8}
+.grid.show-hex .cell-sub:not(:empty){display:block}
+
+/* ── binary panel ── */
+.bin-panel{display:none;margin-top:9px;background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:12px 13px;cursor:pointer;box-shadow:var(--shadow);
+  transition:.12s;-webkit-tap-highlight-color:transparent;}
+.bin-panel.show{display:block}
+.bin-panel:hover{border-color:var(--accent)}
+.bin-panel:active{transform:scale(.99)}
+.bin-bits{font-size:12.5px;font-weight:600;letter-spacing:.5px;margin-top:6px;line-height:1.4;word-break:break-all}
+@media(max-width:380px){.bin-bits{font-size:11px;letter-spacing:.2px}}
+.bn{color:var(--accent)}.bh{color:var(--muted)}.bdot{color:var(--ink-2);opacity:.45;margin:0 1px}
+.bin-legend{font-size:9px;letter-spacing:.3px;color:var(--muted);margin-top:7px}
+.bin-legend .sw{display:inline-block;width:8px;height:8px;border-radius:2px;vertical-align:middle;margin:0 3px 0 8px}
+.bin-legend .sw.net{background:var(--accent)}.bin-legend .sw.host{background:var(--muted)}
+
+/* ── IP check ── */
+.ip-check-wrap{margin-top:9px;background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:12px 13px;box-shadow:var(--shadow);}
+.ip-check-wrap .cell-k{margin-bottom:8px}
+.ip-check-input{width:100%;font-family:var(--mono);font-size:14px;font-weight:600;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+  color:var(--ink);padding:9px 12px;transition:border-color .15s;}
+.ip-check-input::placeholder{color:var(--muted);font-weight:400}
+.ip-check-input:focus{outline:none;border-color:var(--accent)}
+.ip-check-result{min-height:22px;margin-top:9px;font-size:13px;font-weight:600}
+.check-yes{color:var(--good)}.check-no{color:var(--danger)}
+.check-detail{font-size:11px;color:var(--ink-2);font-weight:400;margin-top:4px}
+
+/* ── collapsible sections (ref style) ── */
+.ref{margin-top:18px}
+.ref-head{display:flex;align-items:center;justify-content:space-between;cursor:pointer;
+  padding:4px 2px;user-select:none;}
+.ref-head span{font-size:10.5px;letter-spacing:.8px;color:var(--muted);font-weight:600}
+.ref-head .chev{color:var(--muted);transition:transform .2s;font-size:13px}
+.ref.open .chev{transform:rotate(180deg)}
+.ref-body{display:none;margin-top:11px;background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
+.ref.open .ref-body{display:block}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font-size:9.5px;letter-spacing:.5px;color:var(--muted);font-weight:600;text-align:left;
+  padding:9px 13px;border-bottom:1px solid var(--border);}
+td{padding:8px 13px;border-bottom:1px solid var(--border);color:var(--ink-2);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--surface-2)}
+tbody tr.active td{background:var(--accent-soft)}
+td.c1{color:var(--accent-ink);font-weight:700}td.c2{color:var(--ink);font-weight:500}
+
+/* ── tools section ── */
+.tool-block{padding:14px 14px}
+.tool-block+.tool-block{border-top:1px solid var(--border)}
+.tool-head{font-size:9.5px;letter-spacing:.7px;color:var(--muted);font-weight:600;margin-bottom:11px}
+.tool-input{width:100%;font-family:var(--mono);font-size:13.5px;font-weight:600;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+  color:var(--ink);padding:9px 12px;transition:border-color .15s;margin-bottom:8px;}
+.tool-input::placeholder{color:var(--muted);font-weight:400}
+.tool-input:focus{outline:none;border-color:var(--accent)}
+.split-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.split-row label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.3px;white-space:nowrap}
+.split-size{width:64px;font-family:var(--mono);font-size:14px;font-weight:700;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+  color:var(--accent);padding:7px 10px;text-align:center;transition:border-color .15s;}
+.split-size:focus{outline:none;border-color:var(--accent)}
+.split-result-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:2px}
+.split-item{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+  padding:8px 11px;cursor:pointer;transition:.12s;-webkit-tap-highlight-color:transparent;
+  font-size:13px;font-weight:600;color:var(--ink);}
+.split-item:hover{border-color:var(--accent);color:var(--accent-ink)}
+.split-item:active{transform:scale(.97)}
+.split-item.copied{border-color:var(--good);color:var(--good)}
+.split-more{margin-top:7px;font-size:11px;color:var(--muted);text-align:center;
+  padding:7px;border:1px dashed var(--border);border-radius:7px;}
+.split-count{margin-top:8px;font-size:11px;color:var(--ink-2)}
+.split-count b{color:var(--ink)}
+.sum-ta{width:100%;font-family:var(--mono);font-size:12.5px;background:var(--surface-2);
+  border:1px solid var(--border);border-radius:8px;color:var(--ink);
+  padding:10px 12px;resize:vertical;min-height:88px;transition:border-color .15s;margin-bottom:9px;}
+.sum-ta::placeholder{color:var(--muted)}
+.sum-ta:focus{outline:none;border-color:var(--accent)}
+.sum-result{font-size:13px;min-height:20px;font-weight:600}
+.sum-result .cidr{color:var(--accent-ink);font-size:17px;letter-spacing:-.3px}
+.sum-result .perfect{color:var(--good);font-size:11px;font-weight:600;margin-left:8px}
+.sum-result .lossy{color:var(--warn);font-size:11px;font-weight:600;margin-left:8px}
+.sum-result .sub{font-size:11px;color:var(--ink-2);font-weight:400;margin-top:4px}
+.tool-err{font-size:11.5px;color:var(--danger)}
+.tool-hint{font-size:11px;color:var(--muted);margin-top:6px}
+
+footer{text-align:center;margin-top:26px;font-size:10px;color:var(--muted);letter-spacing:.3px}
+
+/* ── toast ── */
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+  background:var(--accent);color:#000;font-size:12px;font-weight:700;letter-spacing:.2px;
+  padding:10px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:.22s;
+  box-shadow:0 6px 24px rgba(0,212,255,.3);z-index:50;
+  max-width:90vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@keyframes pop{0%{opacity:0;transform:translateY(4px)}100%{opacity:1;transform:none}}
+.grid>*{animation:pop .2s ease both}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="brand"><h1>subnet<span class="dot">.</span></h1><small>instant subnet math</small></div>
+  <button class="theme" id="theme" title="Toggle theme">◐</button>
+</header>
+
+<div class="field">
+  <input id="q" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false"
+    autofocus placeholder="10.0.0.0/22 · /24 · 255.255.252.0 · 0xAC100000 · 10.0.0.0–10.0.3.255">
+  <button class="clear" id="clear">✕</button>
+</div>
+<div class="mode" id="mode"></div>
+
+<!-- scrubber (hidden in range mode) -->
+<div id="scrubSection">
+  <div class="scrub">
+    <div class="scrub-top">
+      <span class="scrub-label">CIDR PREFIX · DRAG TO SCRUB</span>
+      <div class="prefix-badge" id="badge">/24</div>
+    </div>
+    <input type="range" id="slider" min="0" max="32" value="24">
+    <div class="ticks"><span>/0</span><span>/8</span><span>/16</span><span>/24</span><span>/32</span></div>
+  </div>
+</div>
+
+<!-- RANGE MODE -->
+<div id="rangeSection" style="display:none">
+  <div class="hero">
+    <div class="lab">MIN ENCLOSING CIDR</div>
+    <div class="range-row"><span class="ip" id="rngCidr">—</span></div>
+    <div class="range-badges" id="rngBadges"></div>
+    <div class="range-hero-sub" id="rngSub"></div>
+  </div>
+  <div id="rngDecompWrap" style="display:none">
+    <div class="decomp-label">EXACT CIDR DECOMPOSITION</div>
+    <div class="decomp-grid" id="rngDecomp"></div>
+    <div id="rngMore" style="display:none" class="decomp-more"></div>
+  </div>
+</div>
+
+<!-- NORMAL MODE -->
+<div id="normalSection">
+  <div class="hero">
+    <div class="lab" id="herolab">USABLE HOST RANGE</div>
+    <div class="range-row">
+      <span class="ip" id="r1">—</span>
+      <span class="arr" id="rarr">→</span>
+      <span class="ip" id="r2">—</span>
+    </div>
+    <div class="count" id="count">Type an address to begin.</div>
+  </div>
+
+  <div class="formats">
+    <span class="fmt-label">VIEW</span>
+    <button class="fmt-chip" id="hexBtn" aria-pressed="false">HEX</button>
+    <div class="hex-opts" id="hexOpts">
+      <button class="fmt-chip sm" id="pfxBtn" title="Toggle 0x prefix">0x</button>
+      <button class="fmt-chip sm" id="caseBtn" title="Toggle uppercase">A–F</button>
+    </div>
+    <button class="fmt-chip" id="binBtn" aria-pressed="false">BINARY</button>
+  </div>
+
+  <div class="grid" id="grid">
+    <div class="cell" data-copy="net"><div class="cell-k">NETWORK<span class="copyhint">copied</span></div><div class="cell-v" id="net">—</div><div class="cell-sub" id="sub-net"></div></div>
+    <div class="cell" data-copy="bc"><div class="cell-k">BROADCAST<span class="copyhint">copied</span></div><div class="cell-v" id="bc">—</div><div class="cell-sub" id="sub-bc"></div></div>
+    <div class="cell" data-copy="mask"><div class="cell-k">SUBNET MASK<span class="copyhint">copied</span></div><div class="cell-v" id="mask">—</div><div class="cell-sub" id="sub-mask"></div></div>
+    <div class="cell" data-copy="wild"><div class="cell-k">WILDCARD<span class="copyhint">copied</span></div><div class="cell-v" id="wild">—</div><div class="cell-sub" id="sub-wild"></div></div>
+    <div class="cell" data-copy="first"><div class="cell-k">FIRST HOST<span class="copyhint">copied</span></div><div class="cell-v" id="first">—</div><div class="cell-sub" id="sub-first"></div></div>
+    <div class="cell" data-copy="last"><div class="cell-k">LAST HOST<span class="copyhint">copied</span></div><div class="cell-v" id="last">—</div><div class="cell-sub" id="sub-last"></div></div>
+    <div class="cell" data-copy="cidr"><div class="cell-k">PREFIX<span class="copyhint">copied</span></div><div class="cell-v" id="cidr">—</div></div>
+    <div class="cell" data-copy="usable"><div class="cell-k">USABLE HOSTS<span class="copyhint">copied</span></div><div class="cell-v" id="usable">—</div></div>
+  </div>
+
+  <div class="bin-panel" id="binPanel">
+    <div class="cell-k" id="binLabel">NETWORK · BINARY<span class="copyhint">copied</span></div>
+    <div class="bin-bits" id="binBits">—</div>
+    <div class="bin-legend"><span class="sw net"></span>network bits<span class="sw host"></span>host bits</div>
+  </div>
+</div>
+
+<!-- IP CHECK (shows when network loaded) -->
+<div id="ipCheckWrap" style="display:none">
+  <div class="ip-check-wrap">
+    <div class="cell-k">IS IP IN THIS SUBNET?<span class="copyhint" id="checkHint"></span></div>
+    <input id="checkIp" class="ip-check-input" autocomplete="off" autocapitalize="off"
+      spellcheck="false" placeholder="e.g. 192.168.1.50">
+    <div class="ip-check-result" id="checkResult"></div>
+  </div>
+</div>
+
+<!-- SUBNET TOOLS -->
+<div class="ref" id="toolsRef">
+  <div class="ref-head" id="toolsHead">
+    <span>SUBNET TOOLS</span><span class="chev">▾</span>
+  </div>
+  <div class="ref-body">
+    <!-- SPLIT -->
+    <div class="tool-block">
+      <div class="tool-head">SPLIT SUBNET</div>
+      <input id="splitNet" class="tool-input" autocomplete="off" autocapitalize="off"
+        spellcheck="false" placeholder="10.0.0.0/22">
+      <div class="split-row">
+        <label>SPLIT INTO /</label>
+        <input id="splitSize" type="number" class="split-size" min="1" max="32" value="24">
+      </div>
+      <div id="splitResult"><span class="tool-hint">Enter a subnet above to split it</span></div>
+    </div>
+    <!-- SUMMARIZE -->
+    <div class="tool-block">
+      <div class="tool-head">ROUTE SUMMARIZE</div>
+      <textarea id="sumInput" class="sum-ta"
+        placeholder="10.0.0.0/24&#10;10.0.1.0/24&#10;10.0.2.0/24&#10;10.0.3.0/24"></textarea>
+      <div class="sum-result" id="sumResult"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CIDR REFERENCE -->
+<div class="ref" id="ref">
+  <div class="ref-head" id="refhead"><span>CIDR ↔ MASK REFERENCE</span><span class="chev">▾</span></div>
+  <div class="ref-body">
+    <table><thead><tr><th>CIDR</th><th>SUBNET MASK</th><th>WILDCARD</th><th style="text-align:right">TOTAL</th></tr></thead>
+    <tbody id="reftable"></tbody></table>
+  </div>
+</div>
+
+<footer>tap any value to copy · works offline</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+
+/* ════ MATH ════ */
+const ipToInt=ip=>{const p=ip.split('.');if(p.length!==4)return null;const n=p.map(x=>{if(!/^\d{1,3}$/.test(x))return NaN;return +x;});if(n.some(x=>isNaN(x)||x<0||x>255))return null;return(n[0]*16777216+n[1]*65536+n[2]*256+n[3])>>>0;};
+const intToIp=n=>[(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255].join('.');
+const cidrToMask=c=>c===0?0:(0xFFFFFFFF<<(32-c))>>>0;
+const fmt=n=>n.toLocaleString('en-US');
+function maskToCidr(ip){const n=ipToInt(ip);if(n===null)return null;const inv=(~n)>>>0;if(((inv+1)&inv)>>>0)return null;let c=0,x=n;for(let i=0;i<32;i++){if((x>>>31)&1)c++;else break;x=(x<<1)>>>0;}return c;}
+function calc(ipStr,c){const ipi=ipToInt(ipStr);if(ipi===null)return null;const mask=cidrToMask(c),wild=(~mask)>>>0,net=(ipi&mask)>>>0,bc=(net|wild)>>>0,total=Math.pow(2,32-c);let usable,first,last;if(c===32){usable=1;first=net;last=net;}else if(c===31){usable=2;first=net;last=bc;}else{usable=total-2;first=(net+1)>>>0;last=(bc-1)>>>0;}return{net:intToIp(net),bc:intToIp(bc),mask:intToIp(mask),wild:intToIp(wild),first:intToIp(first),last:intToIp(last),total,usable,cidr:c};}
+function binHtml(int,cidr){let h='';for(let pos=0;pos<32;pos++){const bit=(int>>>(31-pos))&1;h+=`<span class="${pos<cidr?'bn':'bh'}">${bit}</span>`;if(pos%8===7&&pos!==31)h+='<span class="bdot">.</span>';}return h;}
+function binPlain(int){let o=[];for(let b=3;b>=0;b--)o.push(((int>>>(b*8))&255).toString(2).padStart(8,'0'));return o.join('.');}
+
+/* ════ HEX FORMAT ════ */
+let hexOn=false,binOn=false,hexPrefix=true,hexUpper=true;
+function hexFmt(int){let s=(int>>>0).toString(16).padStart(8,'0');if(hexUpper)s=s.toUpperCase();return hexPrefix?'0x'+s:s;}
+
+/* ════ PARSE ════ */
+function parseRange(raw){
+  const s=raw.trim();
+  const m=s.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s*[-\u2013\u2014]\s*(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+  if(!m)return null;
+  const si=ipToInt(m[1]),ei=ipToInt(m[2]);
+  if(si===null||ei===null)return null;
+  if((si>>>0)>(ei>>>0))return{error:'Start address is greater than end address'};
+  return{startInt:si>>>0,endInt:ei>>>0,startIp:m[1],endIp:m[2],source:'range'};
+}
+function parse(raw){
+  const s=raw.trim();if(!s)return null;
+  let m=s.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s*[\/\s]\s*(\d{1,2})$/);
+  if(m&&ipToInt(m[1])!==null&&+m[2]<=32)return{ip:m[1],cidr:+m[2],source:'cidr'};
+  m=s.match(/^0x([0-9a-fA-F]{1,8})(?:\s*[\/\s]\s*(\d{1,2}))?$/i);
+  if(m&&(m[2]===undefined||+m[2]<=32)){const v=parseInt(m[1],16)>>>0;return{ip:intToIp(v),cidr:m[2]!==undefined?+m[2]:null,source:'hex',hex:hexFmt(v)};}
+  m=s.match(/^\/?(\d{1,2})$/);if(m&&+m[1]<=32)return{ip:null,cidr:+m[1],source:'prefix'};
+  m=s.match(/^([0-9a-fA-F]{8})(?:\s*[\/\s]\s*(\d{1,2}))?$/);
+  if(m&&/[a-fA-F]/.test(m[1])&&(m[2]===undefined||+m[2]<=32)){const v=parseInt(m[1],16)>>>0;return{ip:intToIp(v),cidr:m[2]!==undefined?+m[2]:null,source:'hex',hex:hexFmt(v)};}
+  if(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(s)&&ipToInt(s)!==null){const mc=maskToCidr(s);if(mc!==null&&(s.startsWith('255')||s==='0.0.0.0'))return{ip:null,cidr:mc,source:'mask',maskIp:s};return{ip:s,cidr:null,source:'ip'};}
+  return{invalid:true};
+}
+
+/* ════ NEW ALGORITHMS ════ */
+function minEnclosing(si,ei){
+  let diff=(si^ei)>>>0,bits=0;while(diff>0){diff=(diff>>>1);bits++;}
+  const cidr=32-bits,mask=cidrToMask(cidr),ni=(si&mask)>>>0,bc=(ni|(~mask>>>0))>>>0;
+  return{net:intToIp(ni),netInt:ni,cidr,mask:intToIp(mask),bc:intToIp(bc),bcInt:bc,total:Math.pow(2,32-cidr)};
+}
+function decompose(si,ei){
+  const res=[];let cur=si>>>0;const end=ei>>>0;
+  while(cur<=end){
+    let tz=0;if(cur===0){tz=32;}else{let t=cur;while((t&1)===0){tz++;t>>>=1;}}
+    let pfx=32-tz;
+    while(pfx<=32){const w=(~cidrToMask(pfx))>>>0,be=(cur|w)>>>0;if(be<=end)break;pfx++;}
+    if(pfx>32)break;
+    const w=(~cidrToMask(pfx))>>>0,be=(cur|w)>>>0;
+    res.push({net:intToIp(cur),netInt:cur,cidr:pfx,endIp:intToIp(be),endInt:be,count:Math.pow(2,32-pfx)});
+    cur=(be+1)>>>0;if(cur===0)break;
+  }
+  return res;
+}
+function isInSubnet(ipInt,netInt,cidr){const mask=cidrToMask(cidr);return((ipInt>>>0&mask)>>>0)===((netInt>>>0&mask)>>>0);}
+function splitSubnet(netInt,netCidr,splitCidr){
+  if(splitCidr<=netCidr||splitCidr>32)return null;
+  const count=Math.pow(2,splitCidr-netCidr),blockSize=Math.pow(2,32-splitCidr),maxShow=512;
+  const subnets=[];
+  for(let i=0;i<Math.min(count,maxShow);i++){subnets.push({net:intToIp((netInt+i*blockSize)>>>0),cidr:splitCidr});}
+  return{count,subnets,truncated:count>maxShow};
+}
+function parseCidrsText(text){
+  const parts=text.split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean);
+  if(!parts.length)return{error:'No input'};
+  const networks=[];
+  for(const part of parts){const p=parse(part);if(!p||p.invalid||!p.ip||p.cidr==null)return{error:`Invalid: "${part}"`};const ni=(ipToInt(p.ip)&cidrToMask(p.cidr))>>>0;networks.push({netInt:ni,cidr:p.cidr,net:intToIp(ni)});}
+  return{networks};
+}
+function summarizeCidrs(networks){
+  if(!networks.length)return null;
+  let minAddr=networks[0].netInt>>>0,maxAddr=minAddr;
+  networks.forEach(n=>{const wild=(~cidrToMask(n.cidr))>>>0,bc=(n.netInt|wild)>>>0;if((n.netInt>>>0)<minAddr)minAddr=n.netInt>>>0;if(bc>maxAddr)maxAddr=bc;});
+  const enc=minEnclosing(minAddr,maxAddr);
+  const totalCovered=networks.reduce((s,n)=>s+Math.pow(2,32-n.cidr),0);
+  const perfect=(enc.netInt===minAddr&&enc.bcInt===maxAddr&&totalCovered===enc.total);
+  return{...enc,perfect,totalCovered};
+}
+
+/* ════ STATE ════ */
+let curCidr=24,inputLocksCidr=true;
+let lastR=null,lastHasIp=false,curBinPlain='';
+let curNetInt=null,curNetCidr=null;
+let isRangeMode=false;
+const fields=['net','bc','mask','wild','first','last','cidr','usable'];
+const addrFields=['net','bc','mask','wild','first','last'];
+function setFill(){$('slider').style.setProperty('--fill',(curCidr/32*100)+'%');}
+
+/* ════ RENDER: RANGE MODE ════ */
+const DECOMP_SHOW=10;
+let allDecomp=[],showAllDecomp=false;
+function renderRange(rng){
+  isRangeMode=true;
+  $('scrubSection').style.display='none';
+  $('normalSection').style.display='none';
+  $('rangeSection').style.display='';
+  const enc=minEnclosing(rng.startInt,rng.endInt);
+  const totalInRange=rng.endInt-rng.startInt+1;
+  const exact=(enc.netInt===rng.startInt&&enc.bcInt===rng.endInt);
+  $('rngCidr').textContent=enc.net+'/'+enc.cidr;
+  // badges
+  const matchBadge=exact?`<span class="rbadge exact">✓ EXACT CIDR MATCH</span>`:`<span class="rbadge partial">⚠ NOT CIDR-ALIGNED</span>`;
+  $('rngBadges').innerHTML=matchBadge;
+  // sub info
+  if(exact){
+    $('rngSub').innerHTML=`<b>${fmt(totalInRange)}</b> IPs · mask ${enc.mask} · range ${rng.startIp} – ${rng.endIp}`;
+  } else {
+    $('rngSub').innerHTML=`<b>${fmt(totalInRange)}</b> of <b>${fmt(enc.total)}</b> IPs in /${enc.cidr} · <span style="color:var(--warn)">${fmt(enc.total-totalInRange)} addresses outside range</span>`;
+  }
+  // decomposition
+  allDecomp=decompose(rng.startInt,rng.endInt);
+  showAllDecomp=false;
+  if(exact&&allDecomp.length===1){
+    $('rngDecompWrap').style.display='none';
+  } else {
+    $('rngDecompWrap').style.display='';
+    renderDecomp();
+  }
+  // set current network for IP check
+  curNetInt=enc.netInt;curNetCidr=enc.cidr;
+  $('ipCheckWrap').style.display='';
+  $('checkIp').placeholder=`e.g. ${enc.net.replace(/\.\d+$/,'.50')}`;
+  $('mode').innerHTML=`range <b>${rng.startIp}</b> → <b>${rng.endIp}</b>`;
+  renderIpCheck();
+}
+function renderDecomp(){
+  const visible=showAllDecomp?allDecomp:allDecomp.slice(0,DECOMP_SHOW);
+  $('rngDecomp').innerHTML=visible.map(d=>`
+    <div class="decomp-card" data-val="${d.net}/${d.cidr}">
+      <div class="decomp-card-k">${d.net}/${d.cidr}<span class="copyhint">copied</span></div>
+      <div class="decomp-card-cidr">${fmt(d.count)} IPs</div>
+      <div class="decomp-card-range">${d.net} – ${d.endIp}</div>
+    </div>`).join('');
+  if(allDecomp.length>DECOMP_SHOW&&!showAllDecomp){
+    $('rngMore').style.display='';
+    $('rngMore').textContent=`▾ show all ${allDecomp.length} blocks`;
+  } else {
+    $('rngMore').style.display='none';
+  }
+}
+$('rngMore') && $('rngMore').addEventListener('click',()=>{showAllDecomp=true;renderDecomp();});
+
+/* ════ RENDER: NORMAL MODE ════ */
+function blank(msg){
+  $('r1').textContent='—';$('r2').textContent='—';$('rarr').style.display='';
+  $('count').textContent=msg||'Type an address to begin.';
+  fields.forEach(f=>{const e=$(f);e.textContent='—';e.classList.add('dim');});
+  $('herolab').textContent='USABLE HOST RANGE';
+  lastR=null;lastHasIp=false;curNetInt=null;curNetCidr=null;
+  $('ipCheckWrap').style.display='none';
+  $('checkResult').innerHTML='';$('checkIp').value='';
+  updateFormats();
+}
+function render(source){
+  const raw=$('q').value;
+  $('clear').classList.toggle('show',raw.length>0);
+  // try range first
+  const rng=parseRange(raw);
+  if(rng){
+    if(rng.error){$('mode').innerHTML=`<b>?</b> ${rng.error}`;setNormalLayout();blank('Invalid range.');return;}
+    renderRange(rng);return;
+  }
+  // normal parse
+  setNormalLayout();
+  const p=parse(raw);
+  if(p&&p.invalid){$('mode').innerHTML='<b>?</b> try 10.0.0.0/22, /22, 255.255.252.0, 0xAC100000, or 10.0.0.0–10.0.3.255';blank('Unrecognized format.');return;}
+  if(source!=='slider'&&p&&p.cidr!=null){curCidr=p.cidr;inputLocksCidr=true;}
+  else if(source==='slider'){inputLocksCidr=false;curCidr=+$('slider').value;}
+  if(inputLocksCidr&&p&&p.cidr!=null)$('slider').value=curCidr;
+  $('badge').textContent='/'+curCidr;setFill();
+  // prefix / mask only
+  if(p&&p.ip===null&&p.cidr!=null){
+    const ref=calc('0.0.0.0',curCidr);
+    $('mode').innerHTML=p.source==='mask'?`mask <b>${p.maskIp}</b> = <b>/${curCidr}</b>`:`prefix <b>/${curCidr}</b> · drag scrubber or add an IP`;
+    $('herolab').textContent='ADDRESSES PER BLOCK';
+    $('r1').textContent=fmt(ref.total);$('r2').textContent='';$('rarr').style.display='none';
+    $('count').innerHTML=`<b>${fmt(ref.usable)}</b> usable · block size <b>${fmt(ref.total)}</b>`;
+    paint({net:'—',bc:'—',first:'—',last:'—',mask:ref.mask,wild:ref.wild,cidr:'/'+curCidr,usable:fmt(ref.usable)},{net:1,bc:1,first:1,last:1});
+    lastR=ref;lastHasIp=false;curNetInt=null;curNetCidr=null;$('ipCheckWrap').style.display='none';
+    updateFormats();return;
+  }
+  if(p&&(p.source==='ip'||(p.source==='hex'&&p.cidr===null))){
+    inputLocksCidr=false;
+    $('mode').innerHTML=p.source==='hex'?`<b>${p.hex}</b> = ${p.ip} · scrub prefix or type /nn`:`<b>${p.ip}</b> · scrub prefix or type /nn`;
+  }
+  if(p&&p.ip){
+    const r=calc(p.ip,curCidr);
+    if(p.source==='cidr')$('mode').innerHTML=`<b>${p.ip}</b> /${curCidr}`;
+    else if(p.source==='hex'&&p.cidr!=null)$('mode').innerHTML=`<b>${p.hex}</b> = ${p.ip} /${curCidr}`;
+    $('herolab').textContent=curCidr>=31?'HOST RANGE':'USABLE HOST RANGE';
+    $('r1').textContent=r.first;$('r2').textContent=r.last;$('rarr').style.display='';
+    $('count').innerHTML=`<b>${fmt(r.usable)}</b> usable of <b>${fmt(r.total)}</b> total`;
+    paint({net:r.net,bc:r.bc,first:r.first,last:r.last,mask:r.mask,wild:r.wild,cidr:'/'+curCidr,usable:fmt(r.usable)},{});
+    lastR=r;lastHasIp=true;
+    curNetInt=ipToInt(r.net)>>>0;curNetCidr=curCidr;
+    $('ipCheckWrap').style.display='';
+    $('checkIp').placeholder=`e.g. ${r.net.replace(/\.\d+$/,'.50')}`;
+    // auto-populate split input with current network
+    const splitNet=$('splitNet');
+    if(!splitNet.dataset.userEdited)splitNet.value=r.net+'/'+curCidr;
+    updateFormats();renderIpCheck();renderSplit();return;
+  }
+  if(!p)blank();
+}
+function setNormalLayout(){
+  isRangeMode=false;
+  $('scrubSection').style.display='';
+  $('normalSection').style.display='';
+  $('rangeSection').style.display='none';
+}
+function paint(vals,dim){fields.forEach(f=>{const e=$(f);e.textContent=vals[f];e.classList.toggle('dim',!!dim[f]);});}
+
+/* ════ HEX / BINARY ════ */
+function updateFormats(){
+  addrFields.forEach(f=>{const sub=$('sub-'+f);if(!sub)return;const v=$(f).textContent;if(hexOn&&v&&v!=='—'&&ipToInt(v)!==null){const h=hexFmt(ipToInt(v));sub.textContent=h;sub.dataset.hex=h;}else{sub.textContent='';sub.dataset.hex='';}});
+  if(binOn&&lastR){let int,label;if(lastHasIp){int=ipToInt(lastR.net);label='NETWORK · BINARY';}else{int=ipToInt(lastR.mask);label='SUBNET MASK · BINARY';}$('binBits').innerHTML=binHtml(int,curCidr);$('binLabel').firstChild.textContent=label+' ';curBinPlain=binPlain(int);}else{$('binBits').textContent='—';curBinPlain='';}
+}
+function applyFormats(){
+  $('grid').classList.toggle('show-hex',hexOn);
+  $('hexBtn').classList.toggle('on',hexOn);$('hexBtn').setAttribute('aria-pressed',hexOn);
+  $('hexOpts').classList.toggle('show',hexOn);
+  $('pfxBtn').textContent=hexPrefix?'0x':'no 0x';$('pfxBtn').classList.toggle('on',hexPrefix);
+  $('caseBtn').textContent=hexUpper?'A–F':'a–f';$('caseBtn').classList.toggle('on',hexUpper);
+  $('binPanel').classList.toggle('show',binOn);
+  $('binBtn').classList.toggle('on',binOn);$('binBtn').setAttribute('aria-pressed',binOn);
+  updateFormats();
+}
+
+/* ════ IP CHECK ════ */
+function renderIpCheck(){
+  const raw=$('checkIp').value.trim();
+  if(!raw||curNetInt===null){$('checkResult').innerHTML='';return;}
+  const ipInt=ipToInt(raw);
+  if(ipInt===null){$('checkResult').innerHTML=`<span class="check-no">? not a valid IP</span>`;return;}
+  const inNet=isInSubnet(ipInt,curNetInt,curNetCidr);
+  const netStr=intToIp(curNetInt)+'/'+curNetCidr;
+  if(inNet){
+    const hostPart=(ipInt-curNetInt)>>>0;
+    $('checkResult').innerHTML=`<span class="check-yes">✓ yes</span> <span style="color:var(--ink-2);font-weight:400;font-size:12px">${raw} is inside ${netStr}</span><div class="check-detail">host offset +${fmt(hostPart)} · ${fmt(Math.pow(2,32-curNetCidr)-hostPart-1)} addresses after</div>`;
+  } else {
+    $('checkResult').innerHTML=`<span class="check-no">✗ no</span> <span style="color:var(--ink-2);font-weight:400;font-size:12px">${raw} is outside ${netStr}</span>`;
+  }
+}
+
+/* ════ SPLIT ════ */
+function renderSplit(){
+  const netStr=$('splitNet').value.trim();
+  if(!netStr){$('splitResult').innerHTML='<span class="tool-hint">Enter a subnet to split</span>';return;}
+  const p=parse(netStr);
+  if(!p||p.invalid||!p.ip||p.cidr==null){$('splitResult').innerHTML='<span class="tool-err">Invalid subnet — use format 10.0.0.0/22</span>';return;}
+  const splitCidr=parseInt($('splitSize').value);
+  if(isNaN(splitCidr)||splitCidr<1||splitCidr>32){$('splitResult').innerHTML='<span class="tool-err">Enter a valid target prefix (1–32)</span>';return;}
+  if(splitCidr<=p.cidr){$('splitResult').innerHTML='<span class="tool-err">Split prefix must be larger than /' + p.cidr + '</span>';return;}
+  const netInt=(ipToInt(p.ip)&cidrToMask(p.cidr))>>>0;
+  const res=splitSubnet(netInt,p.cidr,splitCidr);
+  if(!res){$('splitResult').innerHTML='<span class="tool-err">Cannot split</span>';return;}
+  const show=res.subnets.slice(0,16);
+  const items=show.map(s=>`<div class="split-item" data-val="${s.net}/${s.cidr}">${s.net}/${s.cidr}</div>`).join('');
+  const moreHint=res.subnets.length>16?`<div class="split-more">... ${fmt(res.count-16)} more (showing first 16)</div>`:res.truncated?`<div class="split-more">... ${fmt(res.count-512)} more (capped at 512)</div>`:'';
+  $('splitResult').innerHTML=`<div class="split-result-grid">${items}</div>${moreHint}<div class="split-count"><b>${fmt(res.count)}</b> subnets × /${splitCidr} from ${intToIp(netInt)}/${p.cidr}</div>`;
+}
+
+/* ════ SUMMARIZE ════ */
+function renderSummarize(){
+  const text=$('sumInput').value;
+  if(!text.trim()){$('sumResult').innerHTML='';return;}
+  const parsed=parseCidrsText(text);
+  if(parsed.error){$('sumResult').innerHTML=`<span class="tool-err">${parsed.error}</span>`;return;}
+  const r=summarizeCidrs(parsed.networks);
+  const statusBadge=r.perfect
+    ?`<span class="perfect">✓ perfect summary</span>`
+    :`<span class="lossy">⚠ lossy (${fmt(r.total-r.totalCovered)} extra IPs)</span>`;
+  $('sumResult').innerHTML=`<span class="cidr">${r.net}/${r.cidr}</span>${statusBadge}<div class="sub">mask ${r.mask} · ${fmt(r.total)} IPs total · ${parsed.networks.length} input routes</div>`;
+}
+
+/* ════ COPY ════ */
+function copy(text){
+  if(!text||text==='—')return false;
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).catch(()=>{});
+  else{const t=document.createElement('textarea');t.value=text;t.style.cssText='position:fixed;opacity:0';document.body.appendChild(t);t.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(t);}
+  return true;
+}
+let toastT;
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),1100);}
+function flashCopy(el,val){if(copy(val)){el.classList.add('copied');toast(val);setTimeout(()=>el.classList.remove('copied'),900);}}
+
+/* ════ EVENT LISTENERS ════ */
+// grid cells
+$('grid').addEventListener('click',e=>{
+  const sub=e.target.closest('.cell-sub');
+  if(sub){const h=sub.dataset.hex;if(h){sub.classList.add('sub-copied');toast(h);copy(h);setTimeout(()=>sub.classList.remove('sub-copied'),900);}return;}
+  const cell=e.target.closest('.cell');if(!cell)return;
+  flashCopy(cell,$(cell.dataset.copy).textContent);
+});
+// binary panel
+$('binPanel').addEventListener('click',()=>{if(copy(curBinPlain)){$('binPanel').classList.add('copied');toast(curBinPlain);setTimeout(()=>$('binPanel').classList.remove('copied'),900);}});
+// decomp cards
+$('rngDecomp').addEventListener('click',e=>{const c=e.target.closest('.decomp-card');if(c)flashCopy(c,c.dataset.val);});
+// split items
+$('splitResult').addEventListener('click',e=>{const c=e.target.closest('.split-item');if(c)flashCopy(c,c.dataset.val);});
+// range more
+$('rngMore').addEventListener('click',()=>{showAllDecomp=true;renderDecomp();});
+// format chips
+$('hexBtn').addEventListener('click',()=>{hexOn=!hexOn;setStored('subnet-hex',hexOn?'1':'0');applyFormats();});
+$('pfxBtn').addEventListener('click',()=>{hexPrefix=!hexPrefix;setStored('subnet-hpfx',hexPrefix?'1':'0');applyFormats();});
+$('caseBtn').addEventListener('click',()=>{hexUpper=!hexUpper;setStored('subnet-hcase',hexUpper?'1':'0');applyFormats();});
+$('binBtn').addEventListener('click',()=>{binOn=!binOn;setStored('subnet-bin',binOn?'1':'0');applyFormats();});
+// main input
+$('q').addEventListener('input',()=>{
+  const p=parse($('q').value);
+  if(p&&p.cidr!=null)inputLocksCidr=true;
+  else if(p&&(p.source==='ip'||p.source==='hex'))inputLocksCidr=false;
+  render('input');
+});
+$('slider').addEventListener('input',()=>render('slider'));
+$('clear').addEventListener('click',()=>{$('q').value='';inputLocksCidr=false;$('q').focus();render('input');});
+// collapsible sections
+$('toolsHead').addEventListener('click',()=>$('toolsRef').classList.toggle('open'));
+$('refhead').addEventListener('click',()=>$('ref').classList.toggle('open'));
+// IP check
+$('checkIp').addEventListener('input',renderIpCheck);
+// Split tool
+$('splitNet').addEventListener('input',()=>{$('splitNet').dataset.userEdited='1';renderSplit();});
+$('splitSize').addEventListener('input',renderSplit);
+// Summarize
+$('sumInput').addEventListener('input',renderSummarize);
+
+/* ════ THEME ════ */
+function getStored(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function setStored(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+const html=document.documentElement;
+(function(){const s=getStored('subnet-theme');if(s)html.dataset.theme=s;else if(window.matchMedia&&matchMedia('(prefers-color-scheme:light)').matches)html.dataset.theme='light';})();
+$('theme').addEventListener('click',()=>{const n=html.dataset.theme==='dark'?'light':'dark';html.dataset.theme=n;setStored('subnet-theme',n);document.querySelector('meta[name=theme-color]').setAttribute('content',n==='dark'?'#080d14':'#f0f4f8');});
+
+/* ════ REFERENCE TABLE ════ */
+(function(){
+  const rows=[];
+  for(let c=32;c>=0;c--){const m=calc('0.0.0.0',c);rows.push(`<tr data-cidr="${c}"><td class="c1">/${c}</td><td class="c2">${m.mask}</td><td>${m.wild}</td><td style="text-align:right">${fmt(m.total)}</td></tr>`);}
+  $('reftable').innerHTML=rows.join('');
+  $('reftable').addEventListener('click',e=>{
+    const tr=e.target.closest('tr');if(!tr)return;
+    const c=+tr.dataset.cidr,cur=$('q').value.trim(),ipM=cur.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/);
+    $('q').value=ipM?ipM[1]+'/'+c:'/'+c;
+    curCidr=c;inputLocksCidr=true;$('slider').value=c;
+    [...$('reftable').querySelectorAll('tr')].forEach(r=>r.classList.remove('active'));
+    tr.classList.add('active');render('ref');
+  });
+})();
+
+/* ════ BOOT ════ */
+(function(){
+  hexOn=getStored('subnet-hex')==='1';binOn=getStored('subnet-bin')==='1';
+  hexPrefix=getStored('subnet-hpfx')!=='0';hexUpper=getStored('subnet-hcase')!=='0';
+  applyFormats();
+  // open tools section by default so users discover split/summarize
+  $('toolsRef').classList.add('open');
+})();
+
+// URL param support: ?q=192.168.1.0/24  or  ?q=10.0.0.0-10.0.3.255
+(function(){
+  const params=new URLSearchParams(location.search);
+  const q=params.get('q');
+  $('q').value=q&&q.trim()?decodeURIComponent(q):'192.168.1.0/24';
+  render('input');
+})();
+
+// Write current query to URL as user types (replaceState, no history spam)
+$('q').addEventListener('input',()=>{
+  const v=$('q').value.trim();
+  const url=new URL(location.href);
+  if(v&&v!=='192.168.1.0/24'){url.searchParams.set('q',v);}else{url.searchParams.delete('q');}
+  history.replaceState(null,'',url);
+});
+</script>
+</body>
+</html>
